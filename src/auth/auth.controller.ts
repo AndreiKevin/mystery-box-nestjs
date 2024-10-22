@@ -1,5 +1,6 @@
 import { Controller, Post, Body } from "@nestjs/common";
-import type { AuthService } from "./auth.service";
+// biome-ignore lint/style/useImportType: <this is not used as a type. nestjs needs it to be imported as a class>
+import { AuthService } from "./auth.service";
 import type { RegisterDto } from "./dto/register.dto";
 import type { LoginDto } from "./dto/login.dto";
 

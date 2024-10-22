@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
-import type { MarketService } from './market.service';
+import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+// biome-ignore lint/style/useImportType: <this is not used as a type. nestjs needs it to be imported as a class>
+import { MarketService } from './market.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api/v1/market')
@@ -14,9 +15,8 @@ export class MarketController {
 
   @UseGuards(JwtAuthGuard)
   @Post('purchase')
-  async purchaseTreasure(@Request() req, @Body() body: { quantity: number }) {
-    const userId = req.user.userId;
-    const result = await this.marketService.purchaseTreasure(userId, body.quantity);
+  async purchaseTreasure(@Query('quantity') quantity: number) {
+    const result = await this.marketService.purchaseMysteryBox(quantity);
     return { success: true, data: result };
   }
 }

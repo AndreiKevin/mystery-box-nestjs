@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import type { ReferralService } from './referral.service';
+// biome-ignore lint/style/useImportType: <this is not used as a type. nestjs needs it to be imported as a class>
+import { ReferralService } from './referral.service';
 
 @Controller('api/v1/referral')
 export class ReferralController {
