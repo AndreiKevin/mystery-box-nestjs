@@ -6,6 +6,7 @@ import type { RegisterDto } from "./dto/register.dto";
 import type { LoginDto } from "./dto/login.dto";
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
+import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -74,8 +75,9 @@ export class AuthService {
 	}
 
 	private generateToken(user: User): string {
+		const payload: JwtPayload = { userId: user.id, email: user.email };
 		return jwt.sign(
-			{ userId: user.id, email: user.email },
+			payload,
 			process.env.JWT_SECRET || "your-secret-key",
 			{ expiresIn: "1d" },
 		);
