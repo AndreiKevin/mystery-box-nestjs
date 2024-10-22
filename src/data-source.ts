@@ -9,7 +9,7 @@ export const AppDataSource = new DataSource({
     password: 'aM2EQiPvUj',
     database: 'sql12739915',
     entities: [`${__dirname}/**/*.entity{.ts,.js}`],
-    migrations: [`${__dirname}/migrations/*.ts`],
+    migrations: [`${__dirname}/migrations/*{.ts,.js}`],
     synchronize: true, // set to false in production
     logging: true,
 });
