@@ -14,7 +14,7 @@ export class CreditTransaction {
   id: number;
 
   @Column({ type: 'bigint' })
-  userId: number;
+  user_id: number;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
@@ -27,11 +27,11 @@ export class CreditTransaction {
     type: 'enum',
     enum: TransactionType,
   })
-  transactionType: TransactionType;
+  transaction_type: TransactionType;
 
   @Column({ type: 'bigint', nullable: true })
-  referenceId: number | null;
+  reference_id: number | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  created_at: Date;
 }

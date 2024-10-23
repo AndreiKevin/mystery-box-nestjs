@@ -14,13 +14,14 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
         IN p_referral_code VARCHAR(10)
     )
     BEGIN
+        DECLARE new_user_id BIGINT;
         DECLARE referrer_user_id BIGINT;
         
         -- Check if referral code is provided and exists
         IF p_referral_code IS NOT NULL THEN
             SELECT id INTO referrer_user_id
             FROM users
-            WHERE p_referral_code = p_referral_code;
+            WHERE referral_code = p_referral_code;
             
             -- If referral code exists, insert new user with the referrer_id
             IF referrer_user_id IS NOT NULL THEN
@@ -36,9 +37,17 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
             INSERT INTO users (username, email, password_hash, referral_code, credits)
             VALUES (p_username, p_email, p_password_hash, LEFT(UUID(), 10), 1000);
         END IF;
+
+        SET new_user_id = LAST_INSERT_ID();
+
         -- Add initial credit transaction
         INSERT INTO credit_transactions (user_id, amount, transaction_type)
-        VALUES (LAST_INSERT_ID(), 1000, 'INITIAL');
+        VALUES (new_user_id, 1000, 'INITIAL');
+
+        -- Return the newly created user's information
+        SELECT id, username, email, referral_code, credits
+        FROM users
+        WHERE id = new_user_id;
     END
     `);
 
@@ -47,22 +56,29 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
 
     // Create PurchaseMysteryBox procedure
     await queryRunner.query(`
-      CREATE PROCEDURE PurchaseMysteryBox(IN p_user_id BIGINT)
+      CREATE PROCEDURE PurchaseMysteryBox(IN p_user_id BIGINT, IN p_mystery_box_id BIGINT)
       BEGIN
         DECLARE v_remaining_quantity INT;
         DECLARE v_credits DECIMAL(10,2);
         DECLARE v_treasure_type_id BIGINT;
-        DECLARE v_amount DECIMAL(10,2);
+        DECLARE v_price DECIMAL(10,2);
 
         START TRANSACTION;
 
         SELECT credits INTO v_credits FROM users WHERE id = p_user_id FOR UPDATE;
-        IF v_credits < 100 THEN
+
+        SELECT price INTO v_price FROM mystery_boxes WHERE id = p_mystery_box_id;
+        IF v_price IS NULL THEN
+          ROLLBACK;
+          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid mystery box';
+        END IF;
+
+        IF v_credits < v_price THEN
           ROLLBACK;
           SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Not enough credits';
         END IF;
 
-        SELECT id, amount, remaining_quantity INTO v_treasure_type_id, v_amount, v_remaining_quantity
+        SELECT id, remaining_quantity INTO v_treasure_type_id, v_remaining_quantity
         FROM treasure_types
         WHERE remaining_quantity > 0
         ORDER BY RAND()
@@ -80,18 +96,18 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
         END IF;
 
         UPDATE users
-        SET credits = credits - v_amount
+        SET credits = credits - v_price
         WHERE id = p_user_id;
 
         INSERT INTO mystery_purchases (user_id, treasure_type_id, price)
-        VALUES (p_user_id, v_treasure_type_id, v_amount);
+        VALUES (p_user_id, v_treasure_type_id, v_price);
 
         UPDATE treasure_types
         SET remaining_quantity = remaining_quantity - 1
         WHERE id = v_treasure_type_id;
 
         INSERT INTO credit_transactions (user_id, amount, transaction_type)
-        VALUES (p_user_id, v_amount, 'PURCHASE');
+        VALUES (p_user_id, v_price, 'PURCHASE');
 
         COMMIT;
       END

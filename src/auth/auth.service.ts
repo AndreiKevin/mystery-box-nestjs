@@ -6,14 +6,14 @@ import type { RegisterDto } from "./dto/register.dto";
 import type { LoginDto } from "./dto/login.dto";
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
-import { JwtPayload } from './jwt-payload.interface';
+import type { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
 	constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+		@InjectRepository(User)
+		private userRepository: Repository<User>,
+	) {}
 
 	async register(registerDto: RegisterDto) {
 		const queryRunner =
@@ -25,9 +25,14 @@ export class AuthService {
 			const result = await queryRunner.query("CALL RegisterUser(?, ?, ?, ?)", [
 				registerDto.username,
 				registerDto.email,
-				await bcrypt.hash(registerDto.password, 10),
+				bcrypt.hashSync(registerDto.password, 10),
 				registerDto.referralCode,
 			]);
+
+			// Check if result is defined and has the expected structure
+			if (!result || !Array.isArray(result) || result.length < 2 || !Array.isArray(result[0]) || result[0].length === 0) {
+				throw new Error("Unexpected result from RegisterUser procedure");
+			}
 
 			const newUser = result[0][0];
 			const token = this.generateToken(newUser);
@@ -44,6 +49,7 @@ export class AuthService {
 			};
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
+			console.error("Error in register method:", error);
 			throw error;
 		} finally {
 			await queryRunner.release();
