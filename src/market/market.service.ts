@@ -15,8 +15,19 @@ export class MarketService {
         return this.entityManager.query('SELECT * FROM treasure_types');
     }
     
-    async purchaseMysteryBox(userId: number, mysteryBoxId: number): Promise<void> {
-        await this.entityManager.query('CALL PurchaseMysteryBox(?, ?)', [userId, mysteryBoxId]);
+    async purchaseMysteryBox(userId: number, mysteryBoxId: number): Promise<{treasureReceived: TreasureType, remainingCredits: number}> {
+        try {
+            const res = await this.entityManager.query('CALL PurchaseMysteryBox(?, ?)', [userId, mysteryBoxId]);
+            return {
+                treasureReceived: res[0][0],
+                remainingCredits: res[0][0].remaining_credits
+            }
+        } catch (error) {
+            if (error.sqlMessage?.includes('Not enough credits')) {
+                throw new Error('Not enough credits');
+            }
+            throw new Error('Failed to purchase mystery box');
+        }
     }
 
     async getMysteryBoxes(): Promise<MysteryBox[]> {

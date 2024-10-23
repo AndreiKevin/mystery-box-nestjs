@@ -62,6 +62,7 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
         DECLARE v_credits DECIMAL(10,2);
         DECLARE v_treasure_type_id BIGINT;
         DECLARE v_price DECIMAL(10,2);
+        DECLARE v_remaining_credits DECIMAL(10,2);
 
         START TRANSACTION;
 
@@ -99,6 +100,8 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
         SET credits = credits - v_price
         WHERE id = p_user_id;
 
+        SELECT credits INTO v_remaining_credits FROM users WHERE id = p_user_id;
+
         INSERT INTO mystery_purchases (user_id, treasure_type_id, price)
         VALUES (p_user_id, v_treasure_type_id, v_price);
 
@@ -110,6 +113,11 @@ export class AddCreditTransactionsAndProcedures1684789123000 implements Migratio
         VALUES (p_user_id, v_price, 'PURCHASE');
 
         COMMIT;
+
+        -- Return the treasure received and remaining credits
+        SELECT t.*, v_remaining_credits AS remaining_credits
+        FROM treasure_types t
+        WHERE t.id = v_treasure_type_id;
       END
     `);
   }

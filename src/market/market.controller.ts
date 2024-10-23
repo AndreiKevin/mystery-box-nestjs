@@ -16,10 +16,14 @@ export class MarketController {
   @UseGuards(JwtAuthGuard)
   @Post('purchase')
   async purchaseMysteryBox(@Body() purchaseData: { userId: number; mysteryBoxId: number }) {
-    console.log('PURCHASE BOX PARAMS: ', purchaseData.userId, purchaseData.mysteryBoxId);
-    const result = await this.marketService.purchaseMysteryBox(purchaseData.userId, purchaseData.mysteryBoxId);
-    return { success: true, data: result };
+    try {
+      const result = await this.marketService.purchaseMysteryBox(purchaseData.userId, purchaseData.mysteryBoxId);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   }
+
 
   @Get('mystery-boxes')
   async getMysteryBoxes() {
